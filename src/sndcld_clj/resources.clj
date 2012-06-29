@@ -40,3 +40,5 @@
 (defn me []
   "Request and return the user currently logged in."
   (first (request (Resource. Endpoints/MY_DETAILS nil map->User))))
+
+(future)
