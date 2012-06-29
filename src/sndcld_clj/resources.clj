@@ -4,7 +4,6 @@
 
 ;; Model
 (defrecord Resource [endpoint id result-mapping-fn])
-
 (defrecord Track [id])
 (defrecord User [id])
 
@@ -24,11 +23,11 @@
     (convert-api-response resource response)))
 
 ;; Protocols
-(defprotocol SubResources
+(defprotocol Subresources
   "A Protocol for managing resources and their associated subresources."
   (subresource [this]))
 
-(extend-protocol SubResources
+(extend-protocol Subresources
   Object
   (subresource [this] nil)
   Track
@@ -40,5 +39,3 @@
 (defn me []
   "Request and return the user currently logged in."
   (first (request (Resource. Endpoints/MY_DETAILS nil map->User))))
-
-(future)
