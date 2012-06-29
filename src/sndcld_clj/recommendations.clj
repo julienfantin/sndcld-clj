@@ -15,6 +15,7 @@
 (declare get-user-favorites
          get-track-favoriters
          get-favoriters-favorites
+         filter-non-favorited-tracks
          sort-users-by-similarity
          prune-irrelevant-recommendations)
 
