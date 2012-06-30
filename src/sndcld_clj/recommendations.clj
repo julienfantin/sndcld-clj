@@ -23,13 +23,13 @@
   (filter #(not (= (:id user) (:id %))) users))
 
 (defn recommendations [user track]
-  (try
+  (future
     (let [user-favorites (future (get-user-favorites user))
-          track-favoriters (get-track-favoriters user track)
-          favoriters-favorites (get-favoriters-favorites track-favoriters)
-          sorted-favoriters (sort-users-by-similarity user track-favoriters)
-          top-favoriter (first sorted-favoriters)]
-      (take 10 (filter-non-favorited-tracks user (get-user-favorites top-favoriter))))))
+          track-favoriters (future (get-track-favoriters user track))
+          favoriters-favorites (future (get-favoriters-favorites @track-favoriters))
+          sorted-favoriters (future (sort-users-by-similarity user @track-favoriters))
+          top-favoriter (future (first @sorted-favoriters))]
+      (take 10 (filter-non-favorited-tracks user (get-user-favorites @top-favoriter))))))
 
 (defn get-user-favorites [user]
   (if-let [favs (@favorites user)]
@@ -44,11 +44,12 @@
                             (swap! favoriters assoc track response)))))
 
 (defn get-favoriters-favorites [users]
-  (reduce
-   (fn [results user]
-     (into results (get-user-favorites user)))
-   []
-   users))
+  (let [futures (reduce
+                 (fn [results user]
+                   (into results (future (get-user-favorites user))))
+                 []
+                 users)]
+    (do (map deref futures))))
 
 (defn user-similarity [user1 user2]
   (metrics/similarity (get-user-favorites user1) (get-user-favorites user2)))
