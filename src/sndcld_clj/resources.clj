@@ -7,21 +7,6 @@
 (defrecord Track [id])
 (defrecord User [id])
 
-;; Requests
-(defn- ensure-vector [vec-or-x]
-  (if (vector? vec-or-x) vec-or-x (vector vec-or-x)))
-
-(defn- convert-api-response [resource response]
-  (let [f (:result-mapping-fn resource)]
-    (reduce (fn [coll res]
-              (conj coll (f res)))
-            []
-            (ensure-vector response))))
-
-(defn request [resource]
-  (let [response (api/request (:endpoint resource) (:id resource))]
-    (convert-api-response resource response)))
-
 ;; Protocols
 (defprotocol Subresources
   "A Protocol for managing resources and their associated subresources."
@@ -38,4 +23,7 @@
 ;; Convenience
 (defn me []
   "Request and return the user currently logged in."
-  (first (request (Resource. Endpoints/MY_DETAILS nil map->User))))
+  (first (api/request (Resource. Endpoints/MY_DETAILS nil map->User))))
+
+(defn track []
+  (first (api/request (subresource (me)))))
