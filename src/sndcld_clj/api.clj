@@ -26,8 +26,9 @@ native clj map of the response body on success."
         body-string (Http/getString response)]
     (if (= 200 status)
       (json/read-json body-string)
-      (throw Exception
-             (str "Request failed: error " status " :\n" body-string)))))
+      (throw
+       (new Exception
+            (str "Request failed: error " status " :\n" body-string))))))
 
 ;; Resources wrapper
 (defn- ensure-vector [vec-or-x]
@@ -51,7 +52,7 @@ native clj map of the response body on success."
 
 (def queue (LinkedBlockingQueue.))
 
-(defn async-request [continuation resource]
+(defn async-request [resource continuation]
   (.put queue {:resource resource
                :continuation continuation}))
 
@@ -64,7 +65,7 @@ native clj map of the response body on success."
       (continuation response)
       queue) ;make sure we preserve state between runs
     (catch Exception e
-      (println (str "Request failed : " e))
+      (println e)
       queue)
     (finally (run *agent*))))
 
@@ -73,14 +74,14 @@ native clj map of the response body on success."
 (defn- paused? [agent]
   (::paused (meta agent)))
 
-(defn- pause
+(defn pause
   ([] (doseq [agent agents] (pause agent)))
-  ([agent] (alter-meta! assoc ::paused true)))
+  ([agent] (alter-meta! agent assoc ::paused true)))
 
-(defn- resume
+(defn resume
   ([] (doseq [agent agents] (resume agent)))
   ([agent]
-     (alter-meta! dissoc ::paused)
+     (alter-meta! agent dissoc ::paused)
      (run agent)))
 
 (defn run
