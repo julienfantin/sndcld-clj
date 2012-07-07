@@ -14,22 +14,22 @@
 (def cps-monad (maybe-t cont-m))
 
 (defn mk-cps
-  "wrap a function `f-async` taking only a callback, suitable for use inside cont-m"
-  [f-async]
+  "wrap a function `f` taking only a callback, suitable for use inside cont-m"
+  [f]
   (call-cc
-   (fn [c-resume] ;`c-resume` is a "callback" to the business logic
-     (let [inner-callback (fn [response]
+   (fn [c] ;`c` is a "callback" to the business logic
+     (let [callback (fn [result]
                                         ;build an internal callback for the query function
-                                        ;that will invoke `c-resume` to return to biz logic
-                            (run-cont (c-resume response)))]
-                                        ;when we have a response
-                                        ;invoke `c-resume` with the response
-       (f-async inner-callback)
+                                        ;that will invoke `c` to return to biz logic
+                      (run-cont (c result)))]
+                                        ;when we have a result
+                                        ;invoke `c` with the result
+       (f callback)
                                         ;execute the query, it will resume the business logic via above
-                                        ;internal callback which invokes `c-resume` with the response.
+                                        ;internal callback which invokes `c` with the response.
        (mk-cont nil)
-                                        ;signal to bail out of business logic, we don't have a response yet.
-                                        ;we will resume the business logic when we have a response via `c-resume`
+                                        ;signal to bail out of business logic, we don't have a result yet.
+                                        ;we will resume the business logic when we have a result via `c`
        ))))
 
 ;; business logic!
@@ -38,7 +38,7 @@
     (mk-cps doquery)))
 
 ;; once you invoke this, you're done, you gave up your call stack and
-;; can't return anything meaningful, just "response pending". the final operation
+;; can't return anything meaningful, just "result pending". the final operation
 ;; in the CPS monad must be a side effect.
 ;; can't skip the remaining biz logic while waiting on a value - have to return
 ;; something so we don't block - use maybe-m to bail out. each subsequent time

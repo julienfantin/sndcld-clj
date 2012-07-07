@@ -1,9 +1,8 @@
 (ns sndcld-clj.resources
-  (:import com.soundcloud.api.Endpoints)
-  (:require [sndcld-clj.api :as api]))
+  (:import com.soundcloud.api.Endpoints))
 
 ;; Model
-(defrecord Resource [endpoint id result-mapping-fn])
+(defrecord Resource [endpoint parent-resource result-mapping-fn])
 (defrecord Track [id])
 (defrecord User [id])
 
@@ -13,17 +12,10 @@
   (subresource [this]))
 
 (extend-protocol Subresources
-  Object
-  (subresource [this] nil)
   Track
-  (subresource [this] (Resource. Endpoints/TRACK_FAVORITERS (:id this) map->User))
+  (subresource [this] (->Resource Endpoints/TRACK_FAVORITERS this map->User))
   User
-  (subresource [this] (Resource. Endpoints/USER_FAVORITES (:id this) map->Track)))
+  (subresource [this] (->Resource Endpoints/USER_FAVORITES this map->Track))
+  Object
+  (subresource [this] nil))
 
-;; Convenience
-(defn me []
-  "Request and return the user currently logged in."
-  (first (api/request (Resource. Endpoints/MY_DETAILS nil map->User))))
-
-(defn track []
-  (first (api/request (subresource (me)))))
